@@ -147,7 +147,7 @@ def rolling_sum(a, window_size, reduce=False):
         raise ValueError("window_size should be bigger than 2")
 
     if ~np.all(np.array(a.shape) >= window_size):
-        raise ValueError("Window bigger than input array")
+        raise ValueError(f"Window bigger than input array: {a.shape}, {window_size}")
 
     if a.ndim == 1 and not reduce:
         cumsum = np.cumsum(np.hstack((0, a)))

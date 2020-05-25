@@ -15,9 +15,9 @@ def _focal_majority(a, window_size, fraction_accepted, reduce, r, ind_inner, maj
     if values.size == 0:
         return r
 
-    count_values = rolling_sum(values, window_size, reduce=reduce)
+    count_values = rolling_sum(a, window_size, reduce=reduce)
     if not reduce:
-        count_values[~values[ind_inner]] = 0
+        count_values[~a[ind_inner]] = 0
     count_values[count_values < fraction_accepted * (window_size ** 2)] = 0
 
     # highest digit corresponds to nan

@@ -1,13 +1,16 @@
-This project was created to interface raster and shape files and facilitate plotting them in a homogeneous way. See the
-examples notebook for visual examples of the interfacing and plotting functionality.
+Data used for the thesis
+    Water table depth (Fan et al., 2013/2017)
+        https://wci.earth2observe.eu/thredds/catalog/usc/water-table-depth/catalog.html
+    Global tree height
+        https://webmap.ornl.gov/wcsdown/dataset.jsp?ds_id=10023
+    WorldClim (Precipitation)
+        http://worldclim.org/version2
+    Present and future Koppen climate
+        https://figshare.com/articles/Present_and_future_K_ppen-Geiger_climate_classification_maps_at_1-km_resolution
+        /6396959/2
+    FAPAR
+        https://developers.google.com/earth-engine/datasets/catalog/MODIS_006_MCD15A3H
 
-Beside this the project contains:
- - Both reading and writing files through the same Map interface, making it convenient to pull a file, do some
-    calculations and store the result back in a file. This also works with the tiling behaviour displayed in the
-    notebook. This helps in breaking up the calculations, needing much less memory to work with huge files.
- - focal statistics through the Map interface (geomappy.raster_functions)
- - functions to extend the rasterio functionality, such as reprojecting a file based on the profile of another file
-    (geomappy.raster_functions)
- - several handy functions for color mixing (geomappy.plotting.colors)
- - a progress bar function (geomappy.progress_bar)
- - ND rolling functions (geomappy.ndarray_functions)
+data folder is not uploaded to GitHub, as the it is too large. Use the above links to obtain the original data and see
+HydrShare (https://www.hydroshare.org/resource/38ac7dd90c7d4353bb492604981782f0/) for the produced data on landscape,
+and the geohydrological classes.
