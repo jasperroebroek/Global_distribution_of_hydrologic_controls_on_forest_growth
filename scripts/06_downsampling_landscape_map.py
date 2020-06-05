@@ -4,7 +4,6 @@
 Created on Thu May 30 11:42:35 2019
 @author: jroebroek
 """
-from thesis import *
 import numpy as np
 import geomappy as mp
 

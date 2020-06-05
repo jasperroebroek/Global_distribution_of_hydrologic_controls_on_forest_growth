@@ -10,8 +10,6 @@ Create world map classified in:
     6: Mountainous
     7: High mountainous
 """
-
-import thesis
 import numpy as np
 import geomappy as mp
 import warnings

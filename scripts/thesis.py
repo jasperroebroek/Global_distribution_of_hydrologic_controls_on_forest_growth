@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-os.chdir('../')
-
 import geomappy as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -237,7 +234,8 @@ def draw_thesis_location_zoom_full(ind, titles=True, figsize=(20, 20), save=None
     f, ax = mp.subplots((3, 3), figsize=figsize)
 
     # Classes
-    im = classes.plot(ind, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels, x_labels=x_labels, ax=ax[0])
+    im = classes.plot(ind, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels, x_labels=x_labels,
+                      ax=ax[0])
     if titles:
         ax[0].set_title("Ecohydrological classes")
     if legend == 'colorbar':
@@ -262,7 +260,8 @@ def draw_thesis_location_zoom_full(ind, titles=True, figsize=(20, 20), save=None
     bins = bins[::-1]
     bins = [-i for i in bins]
     wtd.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels,
-                        x_labels=x_labels, ax=ax[2], title=f"$[{'-' * (legend == 'colorbar')}m]$" if legend_title else None,
+                        x_labels=x_labels, ax=ax[2],
+                        title=f"$[{'-' * (legend == 'colorbar')}m]$" if legend_title else None,
                         cmap="Blues", legend=legend, **kwargs, return_image=True)
 
     if legend == 'colorbar':
@@ -273,7 +272,8 @@ def draw_thesis_location_zoom_full(ind, titles=True, figsize=(20, 20), save=None
 
     # FAPAR
     bins = [0, 10, 20, 30, 40, 50, 60, 70, 100]
-    fapar.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels, x_labels=x_labels,
+    fapar.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels,
+                          x_labels=x_labels,
                           ax=ax[3], title="$[\%]}$" if legend_title else None, cmap="Greens", legend=legend, **kwargs)
     if titles:
         ax[3].set_title("fAPAR")
@@ -314,8 +314,8 @@ def draw_thesis_location_zoom_full(ind, titles=True, figsize=(20, 20), save=None
 
     # Correlation WTD and FAPAR
     bins = [-1, -0.5, -0.25, -0.11, 0.11, 0.25, 0.5, 1]
-    corr_wtd_fapar.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0}, 
-                                   y_labels=y_labels, x_labels=x_labels, ax=ax[6], legend=legend, cmap="RdYlBu", 
+    corr_wtd_fapar.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
+                                   y_labels=y_labels, x_labels=x_labels, ax=ax[6], legend=legend, cmap="RdYlBu",
                                    **kwargs)
     if titles:
         ax[6].set_title("Correlation WTD and fAPAR")
@@ -465,7 +465,7 @@ def draw_thesis_map(loc, colorbar=False, legend_2d=False, imshow_kwargs=None, cl
                           for icolor, label in zip(classified_colors, classified_labels)]
 
         mp.plot_classified_map(map_data, bins=classified_bins, colors=classified_colors, labels=classified_labels,
-                                legend=False, suppress_warnings=True, ax=main_map, to_classify=classified_to_classify)
+                               legend=False, suppress_warnings=True, ax=main_map, to_classify=classified_to_classify)
 
         ax.legend(handles=legend_patches,
                   facecolor="white",
@@ -498,16 +498,16 @@ def draw_thesis_map(loc, colorbar=False, legend_2d=False, imshow_kwargs=None, cl
             axins = inset_axes(ax, width="100%", height="100%", bbox_to_anchor=inset_locations[i],
                                bbox_transform=ax.transAxes)
             inset_map = mp.basemap(llcrnrlon=left, llcrnrlat=bottom, urcrnrlon=right, urcrnrlat=top, ax=axins,
-                                resolution='c')  # !! change to f
+                                   resolution='c')  # !! change to f
             inset_map.drawcoastlines(linewidth=0.14)
             ax.indicate_inset_zoom(axins, linewidth=3, edgecolor="black")
 
             if classified:
                 map_data = inset_data[i]
                 mp.plot_classified_map(map_data, bins=classified_bins, colors=classified_colors,
-                                        labels=classified_labels,
-                                        legend=False, ax=inset_map, suppress_warnings=True,
-                                        to_classify=classified_to_classify)
+                                       labels=classified_labels,
+                                       legend=False, ax=inset_map, suppress_warnings=True,
+                                       to_classify=classified_to_classify)
 
             else:
                 inset_map.imshow(inset_data[i], origin='upper', **imshow_kwargs)
