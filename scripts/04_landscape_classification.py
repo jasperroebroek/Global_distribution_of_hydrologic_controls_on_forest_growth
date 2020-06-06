@@ -10,8 +10,10 @@ Create world map classified in:
     6: Mountainous
     7: High mountainous
 """
+from thesis import *
 import numpy as np
 import geomappy as mp
+from geomappy.utils import progress_bar
 import warnings
 warnings.filterwarnings("once")
 
@@ -28,17 +30,17 @@ wtd_mean_5 = "data/wtd/wtd_mean_5.tif"
 wtd_std_5 = "data/wtd/wtd_std_5.tif"
 output_map = "data/landscape_classes/landscape_classes.tif"
 
-M_wtd = mp.Map(wtd, tiles=(20, 20))
-# M_wtd.focal_mean(output_file=wtd_mean_5, window_size=5)
-# M_wtd.focal_std(output_file=wtd_std_5, window_size=5)
+M_wtd = mp.Raster(wtd, tiles=(20, 20))
+M_wtd.focal_mean(output_file=wtd_mean_5, window_size=5)
+M_wtd.focal_std(output_file=wtd_std_5, window_size=5)
 
-M_wtd_mean_5 = mp.Map(wtd_mean_5, tiles=(20, 20))
-M_wtd_std_5 = mp.Map(wtd_std_5, tiles=(20, 20))
+M_wtd_mean_5 = mp.Raster(wtd_mean_5, tiles=(20, 20))
+M_wtd_std_5 = mp.Raster(wtd_std_5, tiles=(20, 20))
 
-M_output = mp.Map(output_map, ref_map=wtd, tiles=(20, 20), mode="w", dtype=np.int8, nodata=0, overwrite=True)
+M_output = mp.Raster(output_map, ref_map=wtd, tiles=(20, 20), mode="w", dtype=np.int8, nodata=0, overwrite=True)
 
 for i in M_wtd:
-    mp.progress_bar((i+1)/M_wtd.c_tiles)
+    progress_bar((i+1)/M_wtd.c_tiles)
     wtd = M_wtd[i]
 
     if np.sum(~np.isnan(wtd)) == 0:
@@ -84,4 +86,4 @@ for i in M_wtd:
 
     M_output[i] = classified_map
 
-mp.Map.close()
+mp.Raster.close()

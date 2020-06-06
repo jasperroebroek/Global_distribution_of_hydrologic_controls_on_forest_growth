@@ -1,6 +1,7 @@
 """
 Convert water table depth dataset to be defined negatively
 """
+from thesis import *
 import geomappy as mp
 import numpy as np
 

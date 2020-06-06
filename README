@@ -10,7 +10,9 @@ Data used for the thesis
         /6396959/2
     FAPAR
         https://developers.google.com/earth-engine/datasets/catalog/MODIS_006_MCD15A3H
+    pET
+        https://figshare.com/articles/Global_Aridity_Index_and_Potential_Evapotranspiration_ET0_Climate_Database_v2/7504448/3
 
 data folder is not uploaded to GitHub, as the it is too large. Use the above links to obtain the original data and see
-HydrShare (https://www.hydroshare.org/resource/38ac7dd90c7d4353bb492604981782f0/) for the produced data on landscape,
-and the geohydrological classes.
+HydroShare (https://www.hydroshare.org/resource/38ac7dd90c7d4353bb492604981782f0/) for the produced data on landscape,
+and the ecohydrological classes.

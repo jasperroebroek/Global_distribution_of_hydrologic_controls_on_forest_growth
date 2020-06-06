@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+
+from matplotlib.colors import ListedColormap
+
 import geomappy as mp
+from geomappy.bounds import bounds_to_polygons
+from geomappy.colors import cmap_2d, cmap_from_borders
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.colors import ListedColormap
-from mpl_toolkits import axes_grid1
+from matplotlib.colorbar import ColorbarBase
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, InsetPosition
 import pandas as pd
+import cartopy.crs as ccrs
+os.chdir('../')
 
 
 def mode(x, fill=np.nan):
@@ -31,91 +37,59 @@ def mode(x, fill=np.nan):
     return mode
 
 
-def draw_thesis_location_zoom(ind, titles=True, figsize=(20, 20), save=None, legend_title=True, legend='colorbar',
-                              **kwargs):
+def draw_thesis_location_zoom(ind):
     """
     Drawing array of nine maps, displaying the input data and results. Not meant for custom use.
 
     Parameters
     ----------
     ind : .
-        look at mp.MapBase.get_pointer()
-    titles : bool, optional
-        insert the titles above the plots
-    figsize : tuple, optional
-        matplotlib equivalent figsize. The default is (20,20)
-    save : str, optional
-        export location
-    legend_title : bool, optional
-        print the title of the legend
-    legend : ['colorbar', 'legend'], optional
-        print a hovering legend or a colorbar, which is the default.
-    kwargs : dict, optional,
-        keyword arguments passed into the mp.MapRead.plot_classified() command
+        look at mp.RasterBase.get_pointer()
     """
-    if isinstance(kwargs, type(None)):
-        kwargs = {}
+    classes = mp.Raster("data/cmap_2d_significant/classes_serial_downsampled_10.tif")
+    climate = mp.Raster("data/climate/climate_downsampled_10_display.tif")
+    landscape = mp.Raster("data/landscape_classes/landscape_downsampled_10_display.tif")
+    p_pet = mp.Raster("data/pet/p_pet_downsampled_10.tif")
+    fapar = mp.Raster("data/fapar/mean_fpar_downsampled_10.tif")
+    corr_wtd_fapar = mp.Raster("data/correlation_wtd_fapar/correlation_wtd_fapar_ge3_15_downsampled_10.tif")
+    corr_p_pet_fapar = mp.Raster("data/correlation_p_pet_fapar/correlation_p_pet_fapar_ge3_15_downsampled_10.tif")
+    corr_p_pet_wtd = mp.Raster("data/correlation_p_pet_wtd/correlation_p_pet_wtd_15_downsampled_10.tif")
+    wtd = mp.Raster("data/wtd/wtd_downsampled_10.tif")
 
-    if 'legend_title_pad' not in kwargs:
-        kwargs.update({'legend_title_pad': 5})
+    f, ax = plt.subplots(3, 3, figsize=(20, 20))
+    plt.tight_layout(h_pad=-15, w_pad=7)
+    ax = [mp.basemap(ax=cax, coastlines=False) for cax in ax.flatten()]
 
-    pad_fraction = kwargs.get('pad_fraction', 0.35)
-    aspect = kwargs.get('aspect', 25)
-
-    classes = mp.Map("data/cmap_2d_significant/classes.tif")
-    orography = mp.Map("data/correlation_p_wtd/correlation_p_wtd_15_downsampled_mean_10.tif")
-    climate = mp.Map("data/climate/climate_downsampled_10_display.tif")
-    landscape = mp.Map("data/landscape_classes/landscape_downsampled_10_display.tif")
-    precipitation = mp.Map("data/precipitation/precipitation_downsampled_10.tif")
-    tree_height = mp.Map("data/tree_height/tree_height_global_downsampled_10.tif")
-    fapar = mp.Map("data/fapar/mean_fpar_downsampled_10.tif")
-    corr_wtd_fapar = mp.Map("data/correlation_wtd_fapar/correlation_wtd_fapar_ge3_15_downsampled_mean_10.tif")
-    corr_p_fapar = mp.Map("data/correlation_p_fapar/correlation_p_fapar_ge3_15_downsampled_mean_10.tif")
-    wtd = mp.Map("data/wtd/wtd_downsampled_10.tif")
-
-    f, ax = mp.subplots((3, 3), figsize=figsize)
+    basemap_kwargs = {'coastline_linewidth': 0.3, 'xticks': 5, 'yticks': 5, 'resolution': '10m'}
+    fontsize = 14
 
     # Classes
-    im = classes.plot(ind, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=37, x_labels=73, ax=ax[0])
-    if titles:
-        ax[0].set_title("Ecohydrological classes")
-    if legend == 'colorbar':
-        divider = axes_grid1.make_axes_locatable(ax[0])
-        width = axes_grid1.axes_size.AxesY(ax[0], aspect=1. / aspect)
-        pad = axes_grid1.axes_size.Fraction(pad_fraction, width)
-        current_ax = plt.gca()
-        cax = divider.append_axes("right", size=width, pad=pad)
-        cax.remove()
+    cmap = cmap_2d((3, 3), alpha=0.5, diverging_alpha=0.25)
+    cmap[1, 1, :] = (0.9, 0.9, 0.9)
+    cmap = cmap.reshape((9, 3))
+    classes.plot_classified_map(ind, basemap=True, basemap_kwargs=basemap_kwargs, legend=None, colors=cmap,
+                                force_equal_figsize=True, ax=ax[0], fontsize=fontsize)
+    ax[0].set_title("Ecohydrological classes", fontsize=fontsize)
 
-    # Precipitation
-    bins = [0, 250, 500, 750, 1000, 1500, 2000, 3000, 10000]
-    precipitation.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=37,
-                                  x_labels=73, ax=ax[1], title="$[mm]$" if legend_title else None,
-                                  cmap="Blues", legend=legend, **kwargs)
-    if titles:
-        ax[1].set_title("Precipitation")
+    # P/pET
+    bins = np.arange(0, 3.1, 0.2)
+    p_pet.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Blues", legend='colorbar',
+                   ax=ax[1], fontsize=fontsize, legend_kwargs={'title': "[-]", 'title_font': {'pad': 10}})
+    ax[1].set_title("P/pET", fontsize=fontsize)
 
     # WTD
     bins = [0, 1, 2, 5, 10, 15, 20, 25, 35, 50, 100, 300]
     bins = bins[::-1]
     bins = [-i for i in bins]
-    wtd.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=37,
-                        x_labels=73, ax=ax[2], title=f"$[{'-' * (legend == 'colorbar')}m]$" if legend_title else None,
-                        cmap="Blues", legend=legend, **kwargs, return_image=True)
-
-    if legend == 'colorbar':
-        ax[2].images[0].colorbar.ax.set_yticklabels([-i for i in bins])
-
-    if titles:
-        ax[2].set_title("WTD")
+    wtd.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Blues", legend='colorbar', ax=ax[2],
+                 fontsize=fontsize, legend_kwargs={'title': "[m]", 'title_font': {'pad': 10}})
+    ax[2].set_title("WTD", fontsize=fontsize)
 
     # FAPAR
     bins = [0, 10, 20, 30, 40, 50, 60, 70, 100]
-    fapar.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=37,
-                          x_labels=73, ax=ax[3], title="$[\%]}$" if legend_title else None,
-                          cmap="Greens", legend=legend, **kwargs)
-    if titles:
-        ax[3].set_title("fAPAR")
+    fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Greens", legend='colorbar',
+                   ax=ax[3], fontsize=fontsize, legend_kwargs={'title': "[%]", 'title_font': {'pad': 10}})
+    ax[3].set_title("fPAR", fontsize=fontsize)
 
     # Climate
     cmap = [(1, 1, 1)]
@@ -132,151 +106,97 @@ def draw_thesis_location_zoom(ind, titles=True, figsize=(20, 20), save=None, leg
                 bins.append(line[:line.find(':')])
             except:
                 pass
-    bins = np.array(bins, dtype=np.int)
-    climate.plot_classified(ind, bins=bins, labels=labels, colors=cmap, suppress_warnings=True, mode='classes',
-                            basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=37, x_labels=73, ax=ax[4],
-                            title="" if legend_title else None, legend=legend, clip_legend=True,
-                            **kwargs)
-    if titles:
-        ax[4].set_title("Climate")
 
-        # Landscape
+    bins = np.array(bins, dtype=np.int)
+    climate.plot_classified_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, colors=cmap,
+                                labels=labels, legend='colorbar', ax=ax[4], fontsize=fontsize, suppress_warnings=True,
+                                clip_legend=True)
+
+    ax[4].set_title("Climate", fontsize=fontsize)
+
+    # Landscape
     cmap = ['#004dac', '#729116', '#b1bc1d', '#e7de23', '#af9a15', '#785707', '#fff9f2']
     labels = ['Wetland and open water', 'Lowland', 'Undulating', 'Hilly', 'Low mountainous', 'Mountainous',
               'High mountainous']
     bins = [1, 2, 3, 4, 5, 6, 7]
-    landscape.plot_classified(ind, bins=bins, labels=labels, basemap=True, colors=cmap,
-                              coastline_kwargs={'linewidth': 0}, y_labels=37, x_labels=73, ax=ax[5],
-                              mode='classes', legend=legend, **kwargs)
-    if titles:
-        ax[5].set_title("Landscape")
+    landscape.plot_classified_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, colors=cmap,
+                                  labels=labels, legend='colorbar', ax=ax[5], fontsize=fontsize, suppress_warnings=True)
+    ax[5].set_title("Landscape", fontsize=fontsize)
 
-    # Correlation WTD and FAPAR
-    bins = [-1, -0.5, -0.25, -0.11, 0.11, 0.25, 0.5, 1]
-    corr_wtd_fapar.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
-                                   y_labels=37, x_labels=73, ax=ax[6], legend=legend, cmap="RdYlBu", **kwargs)
-    if titles:
-        ax[6].set_title("Correlation WTD and fAPAR")
+    # Correlation WTD and fPAR
+    bins = [-1, -0.5, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.5, 1]
+    corr_wtd_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                            ax=ax[6], fontsize=fontsize, cmap="RdYlBu_r")
 
-    # Correlation P and FAPAR
-    corr_p_fapar.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
-                                 y_labels=37, x_labels=73, ax=ax[7], legend=legend, cmap="RdYlBu", **kwargs)
-    if titles:
-        ax[7].set_title("Correlation P and fAPAR")
+    ax[6].set_title("Correlation WTD & fAPAR", fontsize=fontsize)
 
-    # Orography
-    orography.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
-                              y_labels=37, x_labels=73, ax=ax[8], legend=legend, cmap="RdYlBu", **kwargs)
-    if titles:
-        ax[8].set_title("Correlation WTD and P")
+    # Correlation P and fPAR
+    corr_p_pet_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                              ax=ax[7], fontsize=fontsize, cmap="RdYlBu_r")
 
-    plt.tight_layout()
+    ax[7].set_title("Correlation P/pET & fAPAR", fontsize=fontsize)
 
-    if legend == 'colorbar':
-        plt.subplots_adjust(wspace=0.17, hspace=-0.2)
-
-    if not isinstance(save, type(None)):
-        plt.savefig(save)
-
-    plt.show()
+    # Correlation P/pET and fPAR
+    corr_p_pet_wtd.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                            ax=ax[8], fontsize=fontsize, cmap="RdYlBu_r")
+    ax[8].set_title("Correlation P/pET & WTD", fontsize=fontsize)
+    mp.Raster.close(verbose=False)
 
 
-def draw_thesis_location_zoom_full(ind, titles=True, figsize=(20, 20), save=None, legend_title=True, legend='colorbar',
-                                   y_labels=181, x_labels=361, **kwargs):
+def draw_thesis_location_zoom_full(ind):
     """
     Drawing array of nine maps, displaying the input data and results. Not meant for custom use.
 
     Parameters
     ----------
     ind : .
-        look at mp.MapBase.get_pointer()
-    titles : bool, optional
-        insert the titles above the plots
-    figsize : tuple, optional
-        matplotlib equivalent figsize. The default is (20,20)
-    save : str, optional
-        export location
-    legend_title : bool, optional
-        print the title of the legend
-    legend : ['colorbar', 'legend'], optional
-        print a hovering legend or a colorbar, which is the default.
-    y_labels : int, optional
-        number of labels on the y axis. This number represents the y axis covering the whole world. To print a number
-        and grid line every degree
-    x_labels : int, optional
-        number of labels on the x axis. This number represents the x axis covering the whole world. To print a number
-        and grid line every degree
-    kwargs : dict, optional,
-        keyword arguments passed into the mp.MapRead.plot_classified() command
+        look at mp.RasterBase.get_pointer()
     """
-    if isinstance(kwargs, type(None)):
-        kwargs = {}
+    classes = mp.Raster("data/cmap_2d_significant/classes_serial.tif")
+    climate = mp.Raster("data/climate/climate.tif")
+    landscape = mp.Raster("data/wtd/wtd_std_5.tif")
+    p_pet = mp.Raster("data/pet/p_pet.tif")
+    fapar = mp.Raster("data/fapar/mean_fpar_reprojected.tif")
+    corr_wtd_fapar = mp.Raster("data/correlation_wtd_fapar/correlation_wtd_fapar_ge3_15.tif")
+    corr_p_pet_fapar = mp.Raster("data/correlation_p_pet_fapar/correlation_p_pet_fapar_ge3_15.tif")
+    corr_p_pet_wtd = mp.Raster("data/correlation_p_pet_wtd/correlation_p_pet_wtd_15.tif")
+    wtd = mp.Raster("data/wtd/wtd.tif")
 
-    if 'legend_title_pad' not in kwargs:
-        kwargs.update({'legend_title_pad': 5})
+    f, ax = plt.subplots(3, 3, figsize=(20, 20))
+    plt.tight_layout(h_pad=-15, w_pad=7)
+    ax = [mp.basemap(ax=cax, coastlines=False) for cax in ax.flatten()]
 
-    pad_fraction = kwargs.get('pad_fraction', 0.35)
-    aspect = kwargs.get('aspect', 25)
-
-    classes = mp.Map(
-        "data/cmap_2d_significant/classes_full.tif")
-    orography = mp.Map("data/correlation_p_wtd/correlation_p_wtd_15.tif")
-    climate = mp.Map("data/climate/climate.tif")
-    wtd_std = mp.Map("data/wtd/wtd_std_5.tif")
-    landscape_map = mp.Map("data/landscape_classes/landscape_classes.tif")
-    precipitation = mp.Map("data/precipitation/precipitation.tif")
-    tree_height = mp.Map("data/tree_height/tree_height_global.tif")
-    fapar = mp.Map("data/fapar/mean_fpar_reprojected.tif")
-    corr_wtd_fapar = mp.Map("data/correlation_wtd_fapar/correlation_wtd_fapar_ge3_15.tif")
-    corr_p_fapar = mp.Map("data/correlation_p_fapar/correlation_p_fapar_ge3_15.tif")
-    wtd = mp.Map("data/wtd/wtd.tif")
-
-    f, ax = mp.subplots((3, 3), figsize=figsize)
+    basemap_kwargs = {'coastline_linewidth': 0.3, 'xticks': 1, 'yticks': 1, 'resolution': '10m'}
+    fontsize = 14
 
     # Classes
-    im = classes.plot(ind, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels, x_labels=x_labels,
-                      ax=ax[0])
-    if titles:
-        ax[0].set_title("Ecohydrological classes")
-    if legend == 'colorbar':
-        divider = axes_grid1.make_axes_locatable(ax[0])
-        width = axes_grid1.axes_size.AxesY(ax[0], aspect=1. / aspect)
-        pad = axes_grid1.axes_size.Fraction(pad_fraction, width)
-        current_ax = plt.gca()
-        cax = divider.append_axes("right", size=width, pad=pad)
-        cax.remove()
+    cmap = cmap_2d((3, 3), alpha=0.5, diverging_alpha=0.25)
+    cmap[1, 1, :] = (0.9, 0.9, 0.9)
+    cmap = cmap.reshape((9, 3))
+    cmap = np.vstack(((1,1,1), cmap))
+    classes.plot_classified_map(ind, basemap=True, basemap_kwargs=basemap_kwargs, legend=None, colors=cmap,
+                                force_equal_figsize=True, ax=ax[0], fontsize=fontsize, suppress_warnings=True)
+    ax[0].set_title("Ecohydrological classes", fontsize=fontsize)
 
-    # Precipitation
-    # bins = [0, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 4000, 10000]
-    bins = np.hstack([np.arange(0, 1000, 100), np.arange(1000, 3000, 250), 3000, 4000, 10000])
-    precipitation.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels,
-                                  x_labels=x_labels, ax=ax[1], title="$[mm]$" if legend_title else None,
-                                  cmap="Blues", legend=legend, suppress_warnings=True, **kwargs)
-    if titles:
-        ax[1].set_title("Precipitation")
+    # P/pET
+    bins = np.arange(0, 3.1, 0.2)
+    p_pet.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Blues", legend='colorbar',
+                   ax=ax[1], fontsize=fontsize, legend_kwargs={'title': "[-]", 'title_font': {'pad': 10}})
+    ax[1].set_title("P/pET", fontsize=fontsize)
 
     # WTD
     bins = [0, 1, 2, 5, 10, 15, 20, 25, 35, 50, 100, 200, 300, 1000]
     bins = bins[::-1]
     bins = [-i for i in bins]
-    wtd.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels,
-                        x_labels=x_labels, ax=ax[2],
-                        title=f"$[{'-' * (legend == 'colorbar')}m]$" if legend_title else None,
-                        cmap="Blues", legend=legend, **kwargs, return_image=True)
-
-    if legend == 'colorbar':
-        ax[2].images[0].colorbar.ax.set_yticklabels([-i for i in bins])
-
-    if titles:
-        ax[2].set_title("WTD")
+    wtd.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Blues", legend='colorbar', ax=ax[2],
+                 fontsize=fontsize, legend_kwargs={'title': "[m]", 'title_font': {'pad': 10}})
+    ax[2].set_title("WTD", fontsize=fontsize)
 
     # FAPAR
     bins = [0, 10, 20, 30, 40, 50, 60, 70, 100]
-    fapar.plot_classified(ind, bins=bins, basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels,
-                          x_labels=x_labels,
-                          ax=ax[3], title="$[\%]}$" if legend_title else None, cmap="Greens", legend=legend, **kwargs)
-    if titles:
-        ax[3].set_title("fAPAR")
+    fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Greens", legend='colorbar',
+                   ax=ax[3], fontsize=fontsize, legend_kwargs={'title': "[%]", 'title_font': {'pad': 10}})
+    ax[3].set_title("fPAR", fontsize=fontsize)
 
     # Climate
     cmap = [(1, 1, 1)]
@@ -293,238 +213,115 @@ def draw_thesis_location_zoom_full(ind, titles=True, figsize=(20, 20), save=None
                 bins.append(line[:line.find(':')])
             except:
                 pass
+
     bins = np.array(bins, dtype=np.int)
-    climate.plot_classified(ind, bins=bins, labels=labels, colors=cmap, suppress_warnings=True, mode='classes',
-                            basemap=True, coastline_kwargs={'linewidth': 0}, y_labels=y_labels, x_labels=x_labels,
-                            ax=ax[4], title="" if legend_title else None, legend=legend, clip_legend=True, **kwargs)
-    if titles:
-        ax[4].set_title("Climate")
+    climate.plot_classified_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, colors=cmap,
+                                labels=labels, legend='colorbar', ax=ax[4], fontsize=fontsize, suppress_warnings=True,
+                                clip_legend=True)
+
+    ax[4].set_title("Climate", fontsize=fontsize)
 
     # Landscape
-    dem_cmap = np.vstack((mp.cmap_from_borders(("#0000b8", "#006310"), n=2, return_type="list"),
-                          mp.cmap_from_borders(("#006310", "#faea00"), n=7, return_type="list"),
-                          mp.cmap_from_borders(("#faea00", "#504100"), n=8, return_type="list"),
-                          mp.cmap_from_borders(("#504100", "#ffffff"), n=2, return_type="list")))
+    dem_cmap = np.vstack((cmap_from_borders(("#0000b8", "#006310"), n=2, return_type="list"),
+                          cmap_from_borders(("#006310", "#faea00"), n=7, return_type="list"),
+                          cmap_from_borders(("#faea00", "#504100"), n=8, return_type="list"),
+                          cmap_from_borders(("#504100", "#ffffff"), n=2, return_type="list")))
     bins = np.round(np.hstack(((0,), np.logspace(0, np.log10(400), num=18))), 1)
-    wtd_std.plot_classified(ind, bins=bins, basemap=True, cmap=ListedColormap(dem_cmap),
-                            coastline_kwargs={'linewidth': 0}, y_labels=y_labels, x_labels=x_labels, ax=ax[5],
-                            mode='continues', legend=legend, suppress_warnings=True, **kwargs)
-    if titles:
-        ax[5].set_title("Landscape")
+    landscape.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                       cmap=ListedColormap(dem_cmap), ax=ax[5], fontsize=fontsize)
+    ax[5].set_title("Landscape", fontsize=fontsize)
 
-    # Correlation WTD and FAPAR
-    bins = [-1, -0.5, -0.25, -0.11, 0.11, 0.25, 0.5, 1]
-    corr_wtd_fapar.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
-                                   y_labels=y_labels, x_labels=x_labels, ax=ax[6], legend=legend, cmap="RdYlBu",
-                                   **kwargs)
-    if titles:
-        ax[6].set_title("Correlation WTD and fAPAR")
+    # Correlation WTD and fPAR
+    bins = [-1, -0.5, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.5, 1]
+    corr_wtd_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                            ax=ax[6], fontsize=fontsize, cmap="RdYlBu_r")
 
-    # Correlation P and FAPAR
-    corr_p_fapar.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
-                                 y_labels=y_labels, x_labels=x_labels, ax=ax[7], legend=legend, cmap="RdYlBu", **kwargs)
-    if titles:
-        ax[7].set_title("Correlation P and fAPAR")
+    ax[6].set_title("Correlation WTD & fAPAR", fontsize=fontsize)
 
-    # Orography
-    orography.plot_classified(ind, bins=bins, labels=labels, basemap=True, coastline_kwargs={'linewidth': 0},
-                              y_labels=y_labels, x_labels=x_labels, ax=ax[8], legend=legend, cmap="RdYlBu", **kwargs)
-    if titles:
-        ax[8].set_title("Correlation WTD and P")
+    # Correlation P and fPAR
+    corr_p_pet_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                              ax=ax[7], fontsize=fontsize, cmap="RdYlBu_r")
 
-    plt.tight_layout()
+    ax[7].set_title("Correlation P/pET & fAPAR", fontsize=fontsize)
 
-    if legend == 'colorbar':
-        plt.subplots_adjust(wspace=0.17, hspace=-0.2)
-
-    if not isinstance(save, type(None)):
-        plt.savefig(save)
-
-    plt.show()
+    # Correlation P/pET and fPAR
+    corr_p_pet_wtd.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
+                            ax=ax[8], fontsize=fontsize, cmap="RdYlBu_r")
+    ax[8].set_title("Correlation P/pET & WTD", fontsize=fontsize)
+    mp.Raster.close(verbose=False)
 
 
-def draw_thesis_map(loc, colorbar=False, legend_2d=False, imshow_kwargs=None, classified=False,
-                    classified_colors=None, classified_labels=None, classified_bins=None, classified_legend_bbox=None,
-                    classified_legend_title=None, classified_to_classify=True, font=None, x_labels=13, y_labels=7,
-                    dashes=[1, 5], insets=False, inset_coords=None, inset_size=[0.24, 0.24], inset_bottom_margin=0.015,
-                    inset_locations=None, labels=None, ncol=1):
+def draw_thesis_map(loc, loc_small=None, classified=False, legend_2d=False, legend=None, fontsize=28, **kwargs):
     """
     Plot map for thesis. Not intended for reuse.
-
-    Parameters
-    ----------
-    loc : str
-        Location of the map that will be drawn
-    colorbar : bool, optional
-        Add colorbar to the map. At the moment this will be to the right of the map, with a font that is too small.
-        This needs to be fixed.
-    legend_2d : bool, optional
-        2D cmap plotted with the percentages of the classes written inside.
-    imshow_kwargs : dict, optional
-        Kwargs to be passed to plt.imshow() command
-    classified : bool, optional
-        Is the data classified data or does it need to be classified? The default is False.
-    classified_colors : list, optional
-        List of colors used when `classified` is True. The number of colors should be equal to the number of bins.
-        If not provided colors are generated with the discrete_cmap function.
-    classified_labels : list, optional
-        List of labels that will be inserted in the legend when `classified` is True. The length of this list should
-        be equal to the number of bins.
-    classified_bins : list, optional
-        List of bins that will be used to classify the data. If not provided it will use all unique values given in
-        the data.
-    classified_legend_bbox : tuple, optional
-        Tuple containing the bbox location of the legend. If not provided it will be placed at the left bottom of the
-        map.
-    classified_legend_title : str, optional
-        Title of the legend. Default is None.
-    classified_to_classify : bool, optional
-        parameter `to_classify` of `plot_classified_map_old`
-    font : dict, optional
-        Dictionary containing font information in a matplotlib format
-    x_labels : int, optional
-        Number of labels on the x-axis of the map. Default is 13 which corresponds to a line every 30 degrees.
-    y_labels : int, optional
-        Number of labels on the y-axis of the map. Default is 7 which corresponds to a line every 30 degrees.
-    dashes : tuple, optional
-        Dashes used for the parallels and meridians. It is a basemap parameter.
-    insets : bool, optional
-        Print insets in the map. Default is False
-    inset_coords : list, optional
-        List of lists containing the four coordinates of every inset. A default of four different locations is
-        baked in.
-    inset_size : tuple, optional
-        Size of the insets in axes coordinates
-    inset_bottom_margin : float, optional
-        The distance of the insets from the bottom of the map. A default is given.
-    inset_locations : tuple, optional
-        Locations of the insets. This parameter gives complete control over the location and size of each inset.
-        Default locations for the four `inset_coords` is baked in.
-    labels : list, optional
-        A list of names for the insets.
-    ncol : int, optional
-        columns of the legend, default is 1
     """
-    M = mp.Map(loc)
-    map_data = M[0]
+    fontdict = {'fontsize': fontsize, 'va': 'center', 'ha': 'center'}
 
-    if isinstance(inset_coords, type(None)):
-        inset_coords = ((-93, 29, -78, 44),  # Mississippi
-                        (7, 35, 22, 50),  # Italy
-                        # (70, 8, 85, 23),  # India
-                        (15, -7, 30, 8),  # Congo
-                        # (47, 50, 62, 65), # Russia
-                        (142, -35, 158, -20))  # Australia
+    M_thesis = mp.Raster(loc)
+    if isinstance(loc_small, type(None)):
+        loc_small = loc
+    M_thesis_small = mp.Raster(loc_small)
 
-    if map_data.ndim == 2:
-        if insets:
-            inset_data = [M[inset_coords[i]] for i in range(len(inset_coords))]
-    else:
-        if insets:
-            inset_data = [M[inset_coords[i]] for i in range(len(inset_coords))]
+    inset_coords = ((-93, 29, -78, 44),  # Mississippi
+                    (7, 35, 22, 50),  # Italy
+                    (15, -7, 30, 8),  # Congo
+                    (142, -35, 157, -20))  # Australia
 
-    bounds = [-180, -90, 180, 90]
-    f, ax = plt.subplots(1, figsize=(40, 40))
+    bounds = [-180, -89, 180, 90]
+    basemap_kwargs = {'coastline_linewidth': 0.25}
+    ax = mp.basemap(*bounds, figsize=(40, 40), **basemap_kwargs)
 
-    if isinstance(font, type(None)):
-        font = {'fontsize': 20, 'horizontalalignment': 'center', 'verticalalignment': 'center'}
-    else:
-        font_temp = font
-        font = {'fontsize': 20, 'horizontalalignment': 'center', 'verticalalignment': 'center'}
-        font.update(font_temp)
-
-    if isinstance(imshow_kwargs, type(None)):
-        imshow_kwargs = {}
-
-    main_map = mp.basemap(llcrnrlon=bounds[0], llcrnrlat=bounds[1], urcrnrlon=bounds[2], urcrnrlat=bounds[3], ax=ax)
-
-    main_map.drawcoastlines(linewidth=0.14)
-    main_map.drawparallels(np.linspace(-90, 90, num=y_labels), labels=[1, 0, 0, 0], dashes=dashes, fontdict=font)
-    main_map.drawmeridians(np.linspace(-180, 180, num=x_labels), labels=[0, 0, 0, 1], dashes=dashes, fontdict=font)
-
+    bounds = (-180, -60, 180, 90)
+    extent = (bounds[0], bounds[2], bounds[1], bounds[3])
     if classified:
-        if isinstance(classified_bins, type(None)):
-            classified_bins = np.unique(map_data[~np.isnan(map_data)])
-
-        if not isinstance(classified_colors, type(None)):
-            assert len(classified_bins) + classified_to_classify == len(
-                classified_colors), f"length of bins and colors don't match\n" \
-                                    f"bins: {len(classified_bins)}\n" \
-                                    f"colors {len(classified_colors)}"
-        else:
-            classified_colors = mp.cmap_discrete(len(classified_bins), return_type="list")
-
-        if not isinstance(classified_labels, type(None)):
-            assert len(classified_bins) + classified_to_classify == len(
-                classified_labels), f"length of bins and labels don't match, " \
-                                    f"{len(classified_bins)}, {len(classified_labels)}"
-        else:
-            classified_labels = list(classified_bins)
-
-        legend_patches = [Patch(facecolor=icolor, label=label, edgecolor="lightgrey")
-                          for icolor, label in zip(classified_colors, classified_labels)]
-
-        mp.plot_classified_map(map_data, bins=classified_bins, colors=classified_colors, labels=classified_labels,
-                               legend=False, suppress_warnings=True, ax=main_map, to_classify=classified_to_classify)
-
-        ax.legend(handles=legend_patches,
-                  facecolor="white",
-                  edgecolor="lightgrey",
-                  loc="lower left",
-                  bbox_to_anchor=classified_legend_bbox,
-                  fontsize=font['fontsize'],
-                  title=classified_legend_title,
-                  title_fontsize=font['fontsize'],
-                  ncol=ncol)
-
-        colorbar = False
+        ax, _legend = M_thesis.plot_classified_map(bounds, ax=ax, suppress_warnings=True, legend=legend, extent=extent,
+                                                   transform=ax.projection, **kwargs)
     else:
-        im = main_map.imshow(map_data, origin="upper", **imshow_kwargs)
+        ax, _legend = M_thesis.plot_map(bounds, ax=ax, legend=legend, extent=extent, transform=ax.projection, **kwargs)
 
-    if isinstance(inset_locations, type(None)):
-        inset_locations = [(0.30, inset_bottom_margin, *inset_size),
-                           (0.45, inset_bottom_margin, *inset_size),
-                           (0.60, inset_bottom_margin, *inset_size),
-                           (0.75, inset_bottom_margin, *inset_size)]
+    inset_locations = [(-55, -88, 44, 44),
+                       (-5, -88, 44, 44),
+                       (45, -88, 44, 44),
+                       (95, -88, 44, 44)]
 
-    if isinstance(labels, type(None)):
-        labels = [chr(65 + i) for i in range(len(inset_locations))]
+    inset_locations = [((loc[0] + 180) / 360, (loc[1] + 90) / 180, loc[2] / 360, loc[3] / 180) for loc in
+                       inset_locations]
 
-    if insets:
-        for i in range(len(inset_coords)):
-            c = inset_coords[i]
-            left, bottom, right, top = c
+    labels = [chr(65 + i) for i in range(len(inset_locations))]
 
-            axins = inset_axes(ax, width="100%", height="100%", bbox_to_anchor=inset_locations[i],
-                               bbox_transform=ax.transAxes)
-            inset_map = mp.basemap(llcrnrlon=left, llcrnrlat=bottom, urcrnrlon=right, urcrnrlat=top, ax=axins,
-                                   resolution='c')  # !! change to f
-            inset_map.drawcoastlines(linewidth=0.14)
-            ax.indicate_inset_zoom(axins, linewidth=3, edgecolor="black")
+    for i in range(len(inset_locations)):
+        left, bottom, right, top = inset_coords[i]
 
-            if classified:
-                map_data = inset_data[i]
-                mp.plot_classified_map(map_data, bins=classified_bins, colors=classified_colors,
-                                       labels=classified_labels,
-                                       legend=False, ax=inset_map, suppress_warnings=True,
-                                       to_classify=classified_to_classify)
+        ax_inset = plt.gcf().add_subplot(projection=ccrs.PlateCarree(), label=f"{np.random.rand()}")
 
-            else:
-                inset_map.imshow(inset_data[i], origin='upper', **imshow_kwargs)
+        basemap_kwargs = {'grid': False, 'coastline_linewidth': 0.5}
+        if classified:
+            ax_inset, _ = M_thesis_small.plot_classified_map(inset_coords[i], basemap=True, fontsize=fontsize,
+                                                             resolution='10m', ax=ax_inset, xticks=[], yticks=[],
+                                                             basemap_kwargs=basemap_kwargs, suppress_warnings=True,
+                                                             legend=None, **kwargs)
+        else:
+            ax_inset, _ = M_thesis_small.plot_map(inset_coords[i], basemap=True, fontsize=fontsize, resolution='10m',
+                                                  ax=ax_inset, xticks=[], yticks=[], basemap_kwargs=basemap_kwargs,
+                                                  legend=None, **kwargs)
 
-            text_location_x = (left + right) / 2
-            text_location_y = (top + bottom) / 2
-            t = ax.text(text_location_x, text_location_y, labels[i], fontdict=font)
-            t.set_bbox(dict(facecolor='white', alpha=0.8, edgecolor='grey'))
+        ip = InsetPosition(ax, inset_locations[i])
+        ax_inset.set_axes_locator(ip)
 
-            text_location_x = inset_locations[i][0] + inset_locations[i][2] / 2
-            text_location_y = inset_locations[i][1] + inset_locations[i][3] / 2 + inset_size[0] / 2 + 0.01
-            t = ax.text(text_location_x, text_location_y, labels[i], fontdict=font, transform=ax.transAxes)
-            t.set_bbox(dict(facecolor='white', alpha=0.6, edgecolor='grey'))
+        bounds_to_polygons([inset_coords[i]]).plot_shapes(ax=ax, facecolor=(1, 1, 1, 0.5))
+
+        text_location_x = (left + right) / 2
+        text_location_y = (top + bottom) / 2
+        t = ax.text(text_location_x, text_location_y, labels[i], fontdict=fontdict)
+        t.set_bbox(dict(facecolor='white', alpha=0.8, edgecolor='grey'))
+
+        text_location_x = inset_locations[i][0] + inset_locations[i][2] / 2
+        text_location_y = inset_locations[i][1] + inset_locations[i][3] + 0.015
+        t = ax.text(text_location_x, text_location_y, labels[i], fontdict=fontdict, transform=ax.transAxes, zorder=5)
+        t.set_bbox(dict(facecolor='white', alpha=0.6, edgecolor='grey'))
 
     if legend_2d:
-        map_classes = mp.Map("data/cmap_2d_significant/classes_serial.tif")
-        data = map_classes[0]
+        data = mp.Raster("data/cmap_2d_significant/classes_serial_downsampled_10.tif")[0]
         data[np.isnan(data)] = -1
         bins, vals = np.unique(data, return_counts=True)
         bins = bins[1:]
@@ -534,24 +331,28 @@ def draw_thesis_map(loc, colorbar=False, legend_2d=False, imshow_kwargs=None, cl
         axins = inset_axes(ax, width="100%", height="100%",
                            bbox_to_anchor=(-0.01, 0.25, 0.26, 0.26),
                            bbox_transform=ax.transAxes)
-        cmap = mp.cmap_2d((3, 3), diverging=False, alpha=0.5, diverging_alpha=0.25, flip=False, rotate=0)
+
+        cmap = cmap_2d((3, 3), alpha=0.5, diverging_alpha=0.25)
         cmap[1, 1, :] = (0.9, 0.9, 0.9)
 
         axins.imshow(cmap, origin='lower')
         axins.set_xticks([0, 1, 2], minor=False)
         axins.set_yticks([0, 1, 2], minor=False)
-        axins.set_xticklabels([u'\u2014', "0", "+"], minor=False, fontdict=font)
-        axins.set_yticklabels([u'\u2014', "0", "+"], minor=False, fontdict=font)
-        axins.set_xlabel("Correlation WTD and fAPAR", fontdict=font, labelpad=20)
-        axins.set_ylabel("Correlation P and fAPAR", fontdict=font, labelpad=20)
+        axins.set_xticklabels([u'\u2014', "0", "+"], minor=False, fontdict=fontdict)
+        axins.set_yticklabels([u'\u2014', "0", "+"], minor=False, fontsize=fontsize)
+        axins.set_xlabel("Correlation WTD and fAPAR", fontdict=fontdict, labelpad=20)
+        axins.set_ylabel("Correlation P/pET and fAPAR", fontdict=fontdict, labelpad=20)
         axins.tick_params(axis='both', which='both', length=0, pad=20)
 
         for i in range(3):
             for j in range(3):
-                t = axins.text(i, j, f'{vals[i + 3 * j]:1.0f}', fontdict=font)
+                t = axins.text(i, j, f'{vals[i + 3 * j]:1.0f}', fontdict=fontdict)
                 t.set_bbox(dict(facecolor='white', alpha=0.6, edgecolor='grey'))
 
-    if colorbar:
-        mp.add_colorbar(im, pad_fraction=2)
+    ax.tick_params(axis='both', which='both', length=0, labelsize=fontsize, pad=12)
+    if isinstance(_legend, ColorbarBase):
+        _legend.ax.tick_params(labelsize=fontsize, pad=12)
 
-    return ax
+    mp.Raster.close(verbose=False)
+
+    return ax, _legend
