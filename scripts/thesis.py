@@ -71,11 +71,11 @@ def draw_thesis_location_zoom(ind):
                                 force_equal_figsize=True, ax=ax[0], fontsize=fontsize)
     ax[0].set_title("Ecohydrological classes", fontsize=fontsize)
 
-    # P/pET
+    # P/PET
     bins = np.arange(0, 3.1, 0.2)
     p_pet.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Blues", legend='colorbar',
                    ax=ax[1], fontsize=fontsize, legend_kwargs={'title': "[-]", 'title_font': {'pad': 10}})
-    ax[1].set_title("P/pET", fontsize=fontsize)
+    ax[1].set_title("P/PET", fontsize=fontsize)
 
     # WTD
     bins = [0, 1, 2, 5, 10, 15, 20, 25, 35, 50, 100, 300]
@@ -89,7 +89,7 @@ def draw_thesis_location_zoom(ind):
     bins = [0, 10, 20, 30, 40, 50, 60, 70, 100]
     fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Greens", legend='colorbar',
                    ax=ax[3], fontsize=fontsize, legend_kwargs={'title': "[%]", 'title_font': {'pad': 10}})
-    ax[3].set_title("fPAR", fontsize=fontsize)
+    ax[3].set_title("fAPAR", fontsize=fontsize)
 
     # Climate
     cmap = [(1, 1, 1)]
@@ -123,27 +123,27 @@ def draw_thesis_location_zoom(ind):
                                   labels=labels, legend='colorbar', ax=ax[5], fontsize=fontsize, suppress_warnings=True)
     ax[5].set_title("Landscape", fontsize=fontsize)
 
-    # Correlation WTD and fPAR
+    # Correlation WTD and fAPAR
     bins = [-1, -0.5, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.5, 1]
     corr_wtd_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
                             ax=ax[6], fontsize=fontsize, cmap="RdYlBu_r")
 
     ax[6].set_title("Correlation WTD & fAPAR", fontsize=fontsize)
 
-    # Correlation P and fPAR
+    # Correlation P and fAPAR
     corr_p_pet_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
                               ax=ax[7], fontsize=fontsize, cmap="RdYlBu_r")
 
-    ax[7].set_title("Correlation P/pET & fAPAR", fontsize=fontsize)
+    ax[7].set_title("Correlation P/PET & fAPAR", fontsize=fontsize)
 
-    # Correlation P/pET and fPAR
+    # Correlation P/PET and fAPAR
     corr_p_pet_wtd.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
                             ax=ax[8], fontsize=fontsize, cmap="RdYlBu_r")
-    ax[8].set_title("Correlation P/pET & WTD", fontsize=fontsize)
+    ax[8].set_title("Correlation P/PET & WTD", fontsize=fontsize)
     mp.Raster.close(verbose=False)
 
 
-def draw_thesis_location_zoom_full(ind):
+def draw_thesis_location_zoom_full(ind, ticks=1):
     """
     Drawing array of nine maps, displaying the input data and results. Not meant for custom use.
 
@@ -166,7 +166,7 @@ def draw_thesis_location_zoom_full(ind):
     plt.tight_layout(h_pad=-15, w_pad=7)
     ax = [mp.basemap(ax=cax, coastlines=False) for cax in ax.flatten()]
 
-    basemap_kwargs = {'coastline_linewidth': 0.3, 'xticks': 1, 'yticks': 1, 'resolution': '10m'}
+    basemap_kwargs = {'coastline_linewidth': 0.3, 'xticks': ticks, 'yticks': ticks, 'resolution': '10m'}
     fontsize = 14
 
     # Classes
@@ -178,11 +178,11 @@ def draw_thesis_location_zoom_full(ind):
                                 force_equal_figsize=True, ax=ax[0], fontsize=fontsize, suppress_warnings=True)
     ax[0].set_title("Ecohydrological classes", fontsize=fontsize)
 
-    # P/pET
+    # P/PET
     bins = np.arange(0, 3.1, 0.2)
     p_pet.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Blues", legend='colorbar',
                    ax=ax[1], fontsize=fontsize, legend_kwargs={'title': "[-]", 'title_font': {'pad': 10}})
-    ax[1].set_title("P/pET", fontsize=fontsize)
+    ax[1].set_title("P/PET", fontsize=fontsize)
 
     # WTD
     bins = [0, 1, 2, 5, 10, 15, 20, 25, 35, 50, 100, 200, 300, 1000]
@@ -196,7 +196,7 @@ def draw_thesis_location_zoom_full(ind):
     bins = [0, 10, 20, 30, 40, 50, 60, 70, 100]
     fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, cmap="Greens", legend='colorbar',
                    ax=ax[3], fontsize=fontsize, legend_kwargs={'title': "[%]", 'title_font': {'pad': 10}})
-    ax[3].set_title("fPAR", fontsize=fontsize)
+    ax[3].set_title("fAPAR", fontsize=fontsize)
 
     # Climate
     cmap = [(1, 1, 1)]
@@ -231,23 +231,23 @@ def draw_thesis_location_zoom_full(ind):
                        cmap=ListedColormap(dem_cmap), ax=ax[5], fontsize=fontsize)
     ax[5].set_title("Landscape", fontsize=fontsize)
 
-    # Correlation WTD and fPAR
+    # Correlation WTD and fAPAR
     bins = [-1, -0.5, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.5, 1]
     corr_wtd_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
                             ax=ax[6], fontsize=fontsize, cmap="RdYlBu_r")
 
     ax[6].set_title("Correlation WTD & fAPAR", fontsize=fontsize)
 
-    # Correlation P and fPAR
+    # Correlation P and fAPAR
     corr_p_pet_fapar.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
                               ax=ax[7], fontsize=fontsize, cmap="RdYlBu_r")
 
-    ax[7].set_title("Correlation P/pET & fAPAR", fontsize=fontsize)
+    ax[7].set_title("Correlation P/PET & fAPAR", fontsize=fontsize)
 
-    # Correlation P/pET and fPAR
+    # Correlation P/PET and fAPAR
     corr_p_pet_wtd.plot_map(ind, bins=bins, basemap=True, basemap_kwargs=basemap_kwargs, legend='colorbar',
                             ax=ax[8], fontsize=fontsize, cmap="RdYlBu_r")
-    ax[8].set_title("Correlation P/pET & WTD", fontsize=fontsize)
+    ax[8].set_title("Correlation P/PET & WTD", fontsize=fontsize)
     mp.Raster.close(verbose=False)
 
 
@@ -341,7 +341,7 @@ def draw_thesis_map(loc, loc_small=None, classified=False, legend_2d=False, lege
         axins.set_xticklabels([u'\u2014', "0", "+"], minor=False, fontdict=fontdict)
         axins.set_yticklabels([u'\u2014', "0", "+"], minor=False, fontsize=fontsize)
         axins.set_xlabel("Correlation WTD and fAPAR", fontdict=fontdict, labelpad=20)
-        axins.set_ylabel("Correlation P/pET and fAPAR", fontdict=fontdict, labelpad=20)
+        axins.set_ylabel("Correlation P/PET and fAPAR", fontdict=fontdict, labelpad=20)
         axins.tick_params(axis='both', which='both', length=0, pad=20)
 
         for i in range(3):
