@@ -20,7 +20,7 @@ cloudpickle==1.4.1
 cmocean==2.0
 colorspacious==1.1.2
 coverage==5.0
-cryptography==2.8
+cryptography==3.2
 cycler==0.10.0
 Cython==0.29.18
 cytoolz==0.10.1
