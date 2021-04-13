@@ -1,7 +1,6 @@
 .idea/
 __pycache__/
-.ipynb_checkpoints/
-code_base_expansion/
+*.ipynb_checkpoints/
 scratch/
 data
 data/

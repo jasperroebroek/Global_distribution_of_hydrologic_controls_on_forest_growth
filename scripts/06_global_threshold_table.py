@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 @njit
-def correlation_threshold_inference(map1, map2):
+def correlation_threshold_inference(map1, map2, num_obs=225):
     shape = map1.shape[0]
     bs = np.full(shape, np.nan)
     pe = np.full(shape, np.nan)
@@ -22,7 +22,7 @@ def correlation_threshold_inference(map1, map2):
         d1 = d1[mask]
         d2 = d2[mask]
 
-        if d1.size < shape:
+        if d1.size < num_obs:
             continue
 
         d1_mean = d1.mean()
@@ -118,16 +118,24 @@ for i in M_th:
     nans = np.logical_or(np.isnan(fapar), np.isnan(p_pet))
     mask = (rolling_sum(nans, window_size=15) == 0)
 
-    x = correlation_threshold_inference(rolling_window(fapar, window_size=15)[mask],
-                                        rolling_window(p_pet, window_size=15)[mask])
+    a = rolling_window(fapar, window_size=15)[mask]
+    b = rolling_window(p_pet, window_size=15)[mask]
+
+    if a.size == 0:
+        continue
+
+    x = correlation_threshold_inference(a[np.random.choice(np.arange(a.shape[0]), 100, replace=False)],
+                                        b[np.random.choice(np.arange(b.shape[0]), 100, replace=False)])
     d_p_pet[i] = x
 
     # WTD
     nans = np.logical_or(np.isnan(fapar), np.isnan(wtd))
     mask = (rolling_sum(nans, window_size=15) == 0)
 
-    x = correlation_threshold_inference(rolling_window(fapar, window_size=15)[mask],
-                                        rolling_window(wtd, window_size=15)[mask])
+    a = rolling_window(fapar, window_size=15)[mask]
+    b = rolling_window(wtd, window_size=15)[mask]
+    x = correlation_threshold_inference(a[np.random.choice(np.arange(a.shape[0]), 100, replace=False)],
+                                        b[np.random.choice(np.arange(b.shape[0]), 100, replace=False)])
     d_wtd[i] = x
 
 data_p_pet = np.hstack([d_p_pet[x] for x in d_p_pet])
