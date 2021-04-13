@@ -1,4 +1,3 @@
-from thesis import *
 import geomappy as mp
 from geomappy.utils import progress_bar
 from geomappy.rolling import rolling_sum, rolling_window
@@ -124,8 +123,10 @@ for i in M_th:
     if a.size == 0:
         continue
 
-    x = correlation_threshold_inference(a[np.random.choice(np.arange(a.shape[0]), 100, replace=False)],
-                                        b[np.random.choice(np.arange(b.shape[0]), 100, replace=False)])
+    sample_size = min(100, a.shape[0])
+
+    x = correlation_threshold_inference(a[np.random.choice(np.arange(a.shape[0]), sample_size, replace=False)],
+                                        b[np.random.choice(np.arange(b.shape[0]), sample_size, replace=False)])
     d_p_pet[i] = x
 
     # WTD
@@ -134,8 +135,11 @@ for i in M_th:
 
     a = rolling_window(fapar, window_size=15)[mask]
     b = rolling_window(wtd, window_size=15)[mask]
-    x = correlation_threshold_inference(a[np.random.choice(np.arange(a.shape[0]), 100, replace=False)],
-                                        b[np.random.choice(np.arange(b.shape[0]), 100, replace=False)])
+
+    sample_size = min(100, a.shape[0])
+
+    x = correlation_threshold_inference(a[np.random.choice(np.arange(a.shape[0]), sample_size, replace=False)],
+                                        b[np.random.choice(np.arange(b.shape[0]), sample_size, replace=False)])
     d_wtd[i] = x
 
 data_p_pet = np.hstack([d_p_pet[x] for x in d_p_pet])
