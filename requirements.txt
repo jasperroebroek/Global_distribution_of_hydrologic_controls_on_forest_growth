@@ -29,7 +29,7 @@ decorator==4.4.2
 defusedxml==0.6.0
 Deprecated==1.2.7
 descartes==1.1.0
-distributed==2.15.2
+distributed==2021.10.0
 docutils==0.16
 entrypoints==0.3
 Fiona==1.8.4
